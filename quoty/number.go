@@ -30,7 +30,7 @@ func ParseNumberVal(s string) (cty.Value, error) {
 	// delegate to big.Rat.SetString only if it is.
 
 	for _, c := range s {
-		if !((c > '0' && c < '9') || c == '.' || c == '-' || c == 'e' || c == 'E') {
+		if !((c >= '0' && c <= '9') || c == '.' || c == '-' || c == 'e' || c == 'E') {
 			return cty.NilVal, errors.New("invalid number syntax")
 		}
 	}
@@ -43,6 +43,16 @@ func ParseNumberVal(s string) (cty.Value, error) {
 	return cty.CapsuleVal(NumberType, br), nil
 }
 
+// MustParseNumberVal is a variant of ParseNumberVal that panics if it fails
+// to parse the given string, rather than returning an error.
+func MustParseNumberVal(s string) cty.Value {
+	v, err := ParseNumberVal(s)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 func ratFromStellarAssetVal(v StellarAssetAmount) *big.Rat {
 	var br big.Rat
 	br.SetFrac64(int64(v), 10000000)
@@ -52,6 +62,22 @@ func ratFromStellarAssetVal(v StellarAssetAmount) *big.Rat {
 func numberValFromStellarAssetVal(v StellarAssetAmount) cty.Value {
 	br := ratFromStellarAssetVal(v)
 	return cty.CapsuleVal(NumberType, br)
+}
+
+func numberRawEquals(a, b cty.Value) bool {
+	if a.IsKnown() != b.IsKnown() {
+		return false
+	}
+	if a.IsNull() != b.IsNull() {
+		return false
+	}
+	if a.IsNull() || !a.IsKnown() {
+		return true
+	}
+
+	brA := a.EncapsulatedValue().(*big.Rat)
+	brB := b.EncapsulatedValue().(*big.Rat)
+	return brA.Cmp(brB) == 0
 }
 
 func conversionToNumber(in cty.Type) convert.Conversion {
@@ -76,7 +102,11 @@ func conversionToNumber(in cty.Type) convert.Conversion {
 		}
 	case in.Equals(cty.String):
 		return func(in cty.Value) (cty.Value, error) {
-			return ParseNumberVal(in.AsString())
+			v, err := ParseNumberVal(in.AsString())
+			if err != nil {
+				return cty.NilVal, errors.New("a number is required")
+			}
+			return v, nil
 		}
 	case in.Equals(StellarAssetAmountType):
 		return func(in cty.Value) (cty.Value, error) {

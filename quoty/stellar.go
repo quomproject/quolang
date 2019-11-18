@@ -12,6 +12,12 @@ import (
 // converted to StellarAssetAmountType.
 var StellarAssetAmountType cty.Type
 
+// StellarAssetAmountVal wraps a StallarAssetAmount in a cty.Value of type
+// StellarAssetAmountType.
+func StellarAssetAmountVal(n StellarAssetAmount) cty.Value {
+	return cty.CapsuleVal(StellarAssetAmountType, &n)
+}
+
 // StellarAssetAmount is a specialzed int64 that marks the intent for the
 // number to represent ten-millionths of the asset unit.
 //
