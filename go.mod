@@ -12,5 +12,5 @@ require (
 	github.com/kr/pretty v0.1.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/zclconf/go-cty v1.1.0
-	golang.org/x/tools v0.0.0-20191116214431-80313e1ba718 // indirect
+	golang.org/x/tools v0.0.0-20191116214431-80313e1ba718
 )
