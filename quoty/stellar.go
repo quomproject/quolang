@@ -12,6 +12,8 @@ import (
 // converted to StellarAssetAmountType.
 var StellarAssetAmountType cty.Type
 
+var stellarAmountOps = &cty.CapsuleOps{}
+
 // StellarAssetAmountVal wraps a StallarAssetAmount in a cty.Value of type
 // StellarAssetAmountType.
 func StellarAssetAmountVal(n StellarAssetAmount) cty.Value {
@@ -59,5 +61,9 @@ var StellarNativeAssetVal = cty.ObjectVal(map[string]cty.Value{
 })
 
 func init() {
-	StellarAssetAmountType = cty.Capsule("Stellar asset amount", reflect.TypeOf(StellarAssetAmount(0)))
+	StellarAssetAmountType = cty.CapsuleWithOps(
+		"Stellar asset amount",
+		reflect.TypeOf(StellarAssetAmount(0)),
+		stellarAmountOps,
+	)
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/quomproject/quolang/quoty"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/function"
 	"github.com/zclconf/go-cty/cty/function/stdlib"
@@ -21,41 +22,41 @@ func TestExpressionParseAndValue(t *testing.T) {
 		{
 			`1`,
 			nil,
-			cty.NumberIntVal(1),
+			quoty.NumberIntVal(1),
 			0,
 		},
 		{
 			`(1)`,
 			nil,
-			cty.NumberIntVal(1),
+			quoty.NumberIntVal(1),
 			0,
 		},
 		{
 			`(2+3)`,
 			nil,
-			cty.NumberIntVal(5),
+			quoty.NumberIntVal(5),
 			0,
 		},
 		{
 			`2*5+1`,
 			nil,
-			cty.NumberIntVal(11),
+			quoty.NumberIntVal(11),
 			0,
 		},
 		{
 			`9%8`,
 			nil,
-			cty.NumberIntVal(1),
+			quoty.NumberIntVal(1),
 			0,
 		},
 		{
 			`(2+unk)`,
 			&hcl.EvalContext{
 				Variables: map[string]cty.Value{
-					"unk": cty.UnknownVal(cty.Number),
+					"unk": cty.UnknownVal(quoty.Number),
 				},
 			},
-			cty.UnknownVal(cty.Number),
+			cty.UnknownVal(quoty.Number),
 			0,
 		},
 		{
@@ -65,7 +66,7 @@ func TestExpressionParseAndValue(t *testing.T) {
 					"unk": cty.DynamicVal,
 				},
 			},
-			cty.UnknownVal(cty.Number),
+			cty.UnknownVal(quoty.Number),
 			0,
 		},
 		{
@@ -75,19 +76,19 @@ func TestExpressionParseAndValue(t *testing.T) {
 					"unk": cty.DynamicVal,
 				},
 			},
-			cty.UnknownVal(cty.Number),
+			cty.UnknownVal(quoty.Number),
 			0,
 		},
 		{
 			`(2+true)`,
 			nil,
-			cty.UnknownVal(cty.Number),
+			cty.UnknownVal(quoty.Number),
 			1, // unsuitable type for right operand
 		},
 		{
 			`(false+true)`,
 			nil,
-			cty.UnknownVal(cty.Number),
+			cty.UnknownVal(quoty.Number),
 			2, // unsuitable type for each operand
 		},
 		{
@@ -129,7 +130,7 @@ func TestExpressionParseAndValue(t *testing.T) {
 		{
 			`(- 2)`,
 			nil,
-			cty.NumberIntVal(-2),
+			quoty.NumberIntVal(-2),
 			0,
 		},
 		{
@@ -143,13 +144,13 @@ func TestExpressionParseAndValue(t *testing.T) {
     1
 )`,
 			nil,
-			cty.NumberIntVal(1),
+			quoty.NumberIntVal(1),
 			0,
 		},
 		{
 			`(1`,
 			nil,
-			cty.NumberIntVal(1),
+			quoty.NumberIntVal(1),
 			1, // Unbalanced parentheses
 		},
 		{
@@ -321,19 +322,19 @@ upper(
 		{
 			`[1]`,
 			nil,
-			cty.TupleVal([]cty.Value{cty.NumberIntVal(1)}),
+			cty.TupleVal([]cty.Value{quoty.NumberIntVal(1)}),
 			0,
 		},
 		{
 			`[1,]`,
 			nil,
-			cty.TupleVal([]cty.Value{cty.NumberIntVal(1)}),
+			cty.TupleVal([]cty.Value{quoty.NumberIntVal(1)}),
 			0,
 		},
 		{
 			`[1,true]`,
 			nil,
-			cty.TupleVal([]cty.Value{cty.NumberIntVal(1), cty.True}),
+			cty.TupleVal([]cty.Value{quoty.NumberIntVal(1), cty.True}),
 			0,
 		},
 		{
@@ -342,7 +343,7 @@ upper(
   true
 ]`,
 			nil,
-			cty.TupleVal([]cty.Value{cty.NumberIntVal(1), cty.True}),
+			cty.TupleVal([]cty.Value{quoty.NumberIntVal(1), cty.True}),
 			0,
 		},
 		{
@@ -678,17 +679,17 @@ upper(
 			nil,
 			cty.ObjectVal(map[string]cty.Value{
 				"a": cty.TupleVal([]cty.Value{
-					cty.NumberIntVal(0),
+					quoty.NumberIntVal(0),
 				}),
 				"b": cty.TupleVal([]cty.Value{
-					cty.NumberIntVal(1),
-					cty.NumberIntVal(3),
+					quoty.NumberIntVal(1),
+					quoty.NumberIntVal(3),
 				}),
 				"c": cty.TupleVal([]cty.Value{
-					cty.NumberIntVal(2),
+					quoty.NumberIntVal(2),
 				}),
 				"d": cty.TupleVal([]cty.Value{
-					cty.NumberIntVal(4),
+					quoty.NumberIntVal(4),
 				}),
 			}),
 			0,
@@ -698,13 +699,13 @@ upper(
 			nil,
 			cty.ObjectVal(map[string]cty.Value{
 				"a": cty.TupleVal([]cty.Value{
-					cty.NumberIntVal(0),
+					quoty.NumberIntVal(0),
 				}),
 				"b": cty.TupleVal([]cty.Value{
-					cty.NumberIntVal(1),
+					quoty.NumberIntVal(1),
 				}),
 				"c": cty.TupleVal([]cty.Value{
-					cty.NumberIntVal(2),
+					quoty.NumberIntVal(2),
 				}),
 			}),
 			0,
@@ -713,10 +714,10 @@ upper(
 			`{for i, v in ["a", "b", "c", "b", "d"]: v => i}`,
 			nil,
 			cty.ObjectVal(map[string]cty.Value{
-				"a": cty.NumberIntVal(0),
-				"b": cty.NumberIntVal(1),
-				"c": cty.NumberIntVal(2),
-				"d": cty.NumberIntVal(4),
+				"a": quoty.NumberIntVal(0),
+				"b": quoty.NumberIntVal(1),
+				"c": quoty.NumberIntVal(2),
+				"d": quoty.NumberIntVal(4),
 			}),
 			1, // duplicate key "b"
 		},
@@ -1108,7 +1109,7 @@ upper(
 			`["boop"].foo[index]`, // index is a variable to force IndexExpr instead of traversal
 			&hcl.EvalContext{
 				Variables: map[string]cty.Value{
-					"index": cty.NumberIntVal(0),
+					"index": quoty.NumberIntVal(0),
 				},
 			},
 			cty.DynamicVal,
@@ -1536,7 +1537,7 @@ EOT
 				}
 			}
 
-			if !got.RawEquals(test.want) {
+			if !test.want.RawEquals(got) {
 				t.Errorf("wrong result\ngot:  %#v\nwant: %#v", got, test.want)
 			}
 		})
@@ -1568,7 +1569,7 @@ func TestFunctionCallExprValue(t *testing.T) {
 			&hcl.EvalContext{
 				Functions: funcs,
 			},
-			cty.NumberIntVal(5),
+			quoty.NumberIntVal(5),
 			0,
 		},
 		"valid call with arg conversion": {
@@ -1583,7 +1584,7 @@ func TestFunctionCallExprValue(t *testing.T) {
 			&hcl.EvalContext{
 				Functions: funcs,
 			},
-			cty.NumberIntVal(4), // length of string "true"
+			quoty.NumberIntVal(4), // length of string "true"
 			0,
 		},
 		"valid call with unknown arg": {
@@ -1598,7 +1599,7 @@ func TestFunctionCallExprValue(t *testing.T) {
 			&hcl.EvalContext{
 				Functions: funcs,
 			},
-			cty.UnknownVal(cty.Number),
+			cty.UnknownVal(quoty.Number),
 			0,
 		},
 		"valid call with unknown arg needing conversion": {
@@ -1613,7 +1614,7 @@ func TestFunctionCallExprValue(t *testing.T) {
 			&hcl.EvalContext{
 				Functions: funcs,
 			},
-			cty.UnknownVal(cty.Number),
+			cty.UnknownVal(quoty.Number),
 			0,
 		},
 		"valid call with dynamic arg": {
@@ -1628,7 +1629,7 @@ func TestFunctionCallExprValue(t *testing.T) {
 			&hcl.EvalContext{
 				Functions: funcs,
 			},
-			cty.UnknownVal(cty.Number),
+			cty.UnknownVal(quoty.Number),
 			0,
 		},
 		"invalid arg type": {

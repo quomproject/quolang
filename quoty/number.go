@@ -2,19 +2,93 @@ package quoty
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"reflect"
 
 	"github.com/zclconf/go-cty/cty"
-	"github.com/zclconf/go-cty/cty/convert"
 )
 
-// NumberType is the specialized number type used for numeric expressions in
+// Number is the specialized number type used for numeric expressions in
 // the Quo language, instead of cty's own cty.Number.
 //
 // Quo numbers are rational numbers, capable of representing any possible
 // Stellar price but not restricted to the range of Stellar prices.
-var NumberType cty.Type
+var Number cty.Type
+
+var numberOps = &cty.CapsuleOps{
+	GoString: func(v interface{}) string {
+		br := v.(*big.Rat)
+		switch {
+		case br.IsInt() && br.Num().IsInt64():
+			iv := br.Num().Int64()
+			switch iv {
+			case 0:
+				return "quoty.Zero"
+			default:
+				return fmt.Sprintf("quoty.NumberIntVal(%d)", iv)
+			}
+		default:
+			// FIXME: Try to infer automatically how many digits we need, rather
+			// than just always using 14 decimal places.
+			return fmt.Sprintf("quoty.MustParseNumberVal(%q)", br.FloatString(14))
+		}
+	},
+	TypeGoString: func(ty reflect.Type) string {
+		return "quoty.Number"
+	},
+	RawEquals: func(a, b interface{}) bool {
+		brA := a.(*big.Rat)
+		brB := b.(*big.Rat)
+		return brA.Cmp(brB) == 0
+	},
+	ConversionTo: func(srcTy cty.Type) func(cty.Value, cty.Path) (interface{}, error) {
+		switch {
+		case srcTy.Equals(cty.Number):
+			// We don't use cty.Number directly in Quo, but we'll convert from
+			// it just in case it shows up from an integration with some other
+			// HCL-based system.
+			return func(in cty.Value, path cty.Path) (interface{}, error) {
+				// big.Float is a base-2 float, so unless it is an infinity we
+				// will be able to convert it, but if the float was originally
+				// derived from a string of decimal digits then we might not
+				// get exactly what that original string specified.
+				bf := in.AsBigFloat()
+				br, acc := bf.Rat(nil)
+				if acc != big.Exact {
+					// Rat is defined to return non-exact only if the input is
+					// an infinity.
+					return cty.NilVal, errors.New("infinity is not allowed")
+				}
+				return br, nil
+			}
+		case srcTy.Equals(cty.String):
+			return func(in cty.Value, path cty.Path) (interface{}, error) {
+				v, err := ParseNumberVal(in.AsString())
+				if err != nil {
+					return cty.NilVal, errors.New("a number is required")
+				}
+				return v.EncapsulatedValue(), nil
+			}
+		case srcTy.Equals(StellarAssetAmountType):
+			return func(in cty.Value, path cty.Path) (interface{}, error) {
+				inAmtPtr := in.EncapsulatedValue().(*StellarAssetAmount)
+				return numberValFromStellarAssetVal(*inAmtPtr).EncapsulatedValue(), nil
+			}
+		default:
+			return nil
+		}
+	},
+}
+
+// Zero is a Number value representing zero.
+var Zero cty.Value
+
+// NumberIntVal converts the given integer to a NumberType value.
+func NumberIntVal(v int64) cty.Value {
+	br := big.NewRat(v, 1)
+	return cty.CapsuleVal(Number, br)
+}
 
 // ParseNumberVal attempts to parse the given string as a representation of
 // a decimal number using ASCII decimal digits, returning a number value
@@ -40,7 +114,7 @@ func ParseNumberVal(s string) (cty.Value, error) {
 	if !ok {
 		return cty.NilVal, errors.New("invalid number syntax")
 	}
-	return cty.CapsuleVal(NumberType, br), nil
+	return cty.CapsuleVal(Number, br), nil
 }
 
 // MustParseNumberVal is a variant of ParseNumberVal that panics if it fails
@@ -61,63 +135,14 @@ func ratFromStellarAssetVal(v StellarAssetAmount) *big.Rat {
 
 func numberValFromStellarAssetVal(v StellarAssetAmount) cty.Value {
 	br := ratFromStellarAssetVal(v)
-	return cty.CapsuleVal(NumberType, br)
-}
-
-func numberRawEquals(a, b cty.Value) bool {
-	if a.IsKnown() != b.IsKnown() {
-		return false
-	}
-	if a.IsNull() != b.IsNull() {
-		return false
-	}
-	if a.IsNull() || !a.IsKnown() {
-		return true
-	}
-
-	brA := a.EncapsulatedValue().(*big.Rat)
-	brB := b.EncapsulatedValue().(*big.Rat)
-	return brA.Cmp(brB) == 0
-}
-
-func conversionToNumber(in cty.Type) convert.Conversion {
-	switch {
-	case in.Equals(cty.Number):
-		// We don't use cty.Number directly in Quo, but we'll convert from
-		// it just in case it shows up from an integration with some other
-		// HCL-based system.
-		return func(in cty.Value) (cty.Value, error) {
-			// big.Float is a base-2 float, so unless it is an infinity we
-			// will be able to convert it, but if the float was originally
-			// derived from a string of decimal digits then we might not
-			// get exactly what that original string specified.
-			bf := in.AsBigFloat()
-			br, acc := bf.Rat(nil)
-			if acc != big.Exact {
-				// Rat is defined to return non-exact only if the input is
-				// an infinity.
-				return cty.NilVal, errors.New("infinity is not allowed")
-			}
-			return cty.CapsuleVal(NumberType, br), nil
-		}
-	case in.Equals(cty.String):
-		return func(in cty.Value) (cty.Value, error) {
-			v, err := ParseNumberVal(in.AsString())
-			if err != nil {
-				return cty.NilVal, errors.New("a number is required")
-			}
-			return v, nil
-		}
-	case in.Equals(StellarAssetAmountType):
-		return func(in cty.Value) (cty.Value, error) {
-			inAmtPtr := in.EncapsulatedValue().(*StellarAssetAmount)
-			return numberValFromStellarAssetVal(*inAmtPtr), nil
-		}
-	default:
-		return nil
-	}
+	return cty.CapsuleVal(Number, br)
 }
 
 func init() {
-	NumberType = cty.Capsule("number", reflect.TypeOf(big.Rat{}))
+	Number = cty.CapsuleWithOps(
+		"number",
+		reflect.TypeOf(big.Rat{}),
+		numberOps,
+	)
+	Zero = NumberIntVal(0)
 }

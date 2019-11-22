@@ -8,6 +8,7 @@ import (
 
 	"github.com/apparentlymart/go-textseg/textseg"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/quomproject/quolang/quoty"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -1069,7 +1070,7 @@ func (p *parser) numberLitValue(tok Token) (cty.Value, hcl.Diagnostics) {
 	// The cty.ParseNumberVal is always the same behavior as converting a
 	// string to a number, ensuring we always interpret decimal numbers in
 	// the same way.
-	numVal, err := cty.ParseNumberVal(string(tok.Bytes))
+	numVal, err := quoty.ParseNumberVal(string(tok.Bytes))
 	if err != nil {
 		ret := cty.UnknownVal(cty.Number)
 		return ret, hcl.Diagnostics{

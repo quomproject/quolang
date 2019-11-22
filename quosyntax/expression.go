@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/quomproject/quolang/quoty"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/convert"
 	"github.com/zclconf/go-cty/cty/function"
@@ -631,7 +632,7 @@ func (e *IndexExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
 	diags = append(diags, collDiags...)
 	diags = append(diags, keyDiags...)
 
-	val, indexDiags := hcl.Index(coll, key, &e.SrcRange)
+	val, indexDiags := quoty.Index(coll, key, &e.SrcRange)
 	setDiagEvalContext(indexDiags, e, ctx)
 	diags = append(diags, indexDiags...)
 	return val, diags

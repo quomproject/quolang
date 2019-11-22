@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/zclconf/go-cty/cty"
+	"github.com/zclconf/go-cty/cty/convert"
 )
 
 func TestConvert(t *testing.T) {
@@ -17,73 +18,73 @@ func TestConvert(t *testing.T) {
 		// To NumberType
 		{
 			cty.StringVal("1"),
-			NumberType,
+			Number,
 			MustParseNumberVal("1"),
 			``,
 		},
 		{
 			cty.StringVal("1.2"),
-			NumberType,
+			Number,
 			MustParseNumberVal("1.2"),
 			``,
 		},
 		{
 			cty.StringVal("-1.2"),
-			NumberType,
+			Number,
 			MustParseNumberVal("-1.2"),
 			``,
 		},
 		{
 			StellarAssetAmountVal(StellarAssetAmount(25123456)),
-			NumberType,
+			Number,
 			MustParseNumberVal("2.5123456"),
 			``,
 		},
 		{
 			StellarAssetAmountVal(StellarAssetAmount(-25123456)),
-			NumberType,
+			Number,
 			MustParseNumberVal("-2.5123456"),
 			``,
 		},
 		{
 			cty.NumberIntVal(1),
-			NumberType,
+			Number,
 			MustParseNumberVal("1"),
 			``,
 		},
 		{
 			cty.NumberFloatVal(1.5),
-			NumberType,
+			Number,
 			MustParseNumberVal("1.5"),
 			``,
 		},
 		{
 			cty.UnknownVal(cty.String),
-			NumberType,
-			cty.UnknownVal(NumberType),
+			Number,
+			cty.UnknownVal(Number),
 			``,
 		},
 		{
 			cty.NullVal(cty.String),
-			NumberType,
-			cty.NullVal(NumberType),
+			Number,
+			cty.NullVal(Number),
 			``,
 		},
 		{
 			cty.StringVal("hi"),
-			NumberType,
+			Number,
 			cty.NilVal,
 			`a number is required`,
 		},
 		{
 			cty.StringVal("1/2"),
-			NumberType,
+			Number,
 			cty.NilVal,
 			`a number is required`,
 		},
 		{
 			cty.True,
-			NumberType,
+			Number,
 			cty.NilVal,
 			`number required`,
 		},
@@ -105,14 +106,14 @@ func TestConvert(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%#v to %#v", test.in, test.wantTy), func(t *testing.T) {
-			got, err := Convert(test.in, test.wantTy)
+			got, err := convert.Convert(test.in, test.wantTy)
 
 			if test.wantErr == "" {
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
 				}
-				if !RawEqual(got, test.want) {
-					t.Errorf("wrong result\ngot:  %s\nwant: %s", ValGoString(got), ValGoString(test.want))
+				if !test.want.RawEquals(got) {
+					t.Errorf("wrong result\ngot:  %#v\nwant: %#v", got, test.want)
 				}
 			} else {
 				if err == nil {
