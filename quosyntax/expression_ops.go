@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/quomproject/quolang/quofn"
+	"github.com/quomproject/quolang/quoty"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/convert"
 	"github.com/zclconf/go-cty/cty/function"
@@ -56,20 +58,20 @@ var (
 	}
 
 	OpAdd = &Operation{
-		Impl: stdlib.AddFunc,
-		Type: cty.Number,
+		Impl: quofn.AddFunc,
+		Type: quoty.Number,
 	}
 	OpSubtract = &Operation{
-		Impl: stdlib.SubtractFunc,
-		Type: cty.Number,
+		Impl: quofn.SubtractFunc,
+		Type: quoty.Number,
 	}
 	OpMultiply = &Operation{
-		Impl: stdlib.MultiplyFunc,
-		Type: cty.Number,
+		Impl: quofn.MultiplyFunc,
+		Type: quoty.Number,
 	}
 	OpDivide = &Operation{
-		Impl: stdlib.DivideFunc,
-		Type: cty.Number,
+		Impl: quofn.DivideFunc,
+		Type: quoty.Number,
 	}
 	OpModulo = &Operation{
 		Impl: stdlib.ModuloFunc,

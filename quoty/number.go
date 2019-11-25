@@ -84,6 +84,14 @@ var numberOps = &cty.CapsuleOps{
 // Zero is a Number value representing zero.
 var Zero cty.Value
 
+// NumberVal wraps the given rational in a NumberType value.
+//
+// big.Rat is the native internal type of NumberVal. Callers must not mutate
+// the given value after passing it to this function.
+func NumberVal(v *big.Rat) cty.Value {
+	return cty.CapsuleVal(Number, v)
+}
+
 // NumberIntVal converts the given integer to a NumberType value.
 func NumberIntVal(v int64) cty.Value {
 	br := big.NewRat(v, 1)
